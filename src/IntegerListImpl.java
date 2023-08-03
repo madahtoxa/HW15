@@ -1,21 +1,41 @@
+
+
 import java.util.Arrays;
 
+
 public class IntegerListImpl implements IntegerList {
-    private final Integer[] storage;
+    private Integer[] storage;
     private int size;
 
     public IntegerListImpl() {
         storage = new Integer[10];
     }
 
-    public IntegerListImpl(int inSize) {
-        storage = new Integer[inSize];
+    public IntegerListImpl(int initSize) {
+        storage = new Integer[initSize];
+    }
+
+    private void validateItem(Integer item) throws NullItemException {
+        if (item == null) {
+            throw new NullItemException();
+        }
+    }
+
+    private void growIfNeeded() {
+        if (size == storage.length) {
+            grow();
+        }
+    }
+
+    private void validateIndex(int index) {
+        if (index < 0 || index > size) {
+            throw new InvalidIndexException();
+        }
     }
 
     @Override
-
     public Integer add(Integer item) {
-        validateSize();
+        growIfNeeded();
         validateItem(item);
         storage[size++] = item;
         return item;
@@ -28,14 +48,15 @@ public class IntegerListImpl implements IntegerList {
 
     @Override
     public Integer add(int index, Integer item) {
-        validateSize();
+        growIfNeeded();
         validateItem(item);
         validateIndex(index);
         if (index == size) {
             storage[size++] = item;
+            return item;
         }
         System.arraycopy(storage, index, storage, index + 1, size - index);
-        storage[index] = item;
+        storage[size++] = item;
         size++;
         return item;
     }
@@ -54,27 +75,29 @@ public class IntegerListImpl implements IntegerList {
     }
 
     @Override
-    public Integer remove(Integer item) {
+    public Integer remove(Integer item) throws ElementNotFoundException {
         validateItem(item);
         int index = indexOf(item);
-        return remove(index);
-    }
-
-    @Override
-    public Integer remove(int index) {
-        validateIndex(index);
-        Integer item = storage[index];
+        if (index == -1) {
+            throw new ElementNotFoundException();
+        }
         if (index != size) {
             System.arraycopy(storage, index + 1, storage, index, size - index);
         }
-
         size--;
         return item;
     }
 
     @Override
-    public boolean contains(Integer item) {
-        return false;
+    public Integer remove(int index) {
+        validateIndex(index);
+
+        Integer item = storage[index];
+        if (index != size) {
+            System.arraycopy(storage, index + 1, storage, index, size - index);
+        }
+        size--;
+        return item;
     }
 
 
@@ -91,7 +114,7 @@ public class IntegerListImpl implements IntegerList {
 
     @Override
     public int lastIndexOf(Integer item) {
-        for (int i = size - 1; i >= 0; i--) {
+        for (int i = size; i >= 0; i--) {
             Integer s = storage[i];
             if (s.equals(item)) {
                 return i;
@@ -106,21 +129,15 @@ public class IntegerListImpl implements IntegerList {
         return storage[index];
     }
 
-    @Override
-    public boolean equals(IntegerList otherList) {
 
-        return Arrays.equals(this.toArray(), otherList.toArray());
-    }
 
     @Override
     public int size() {
-
         return size;
     }
 
     @Override
     public boolean isEmpty() {
-
         return size == 0;
     }
 
@@ -129,65 +146,50 @@ public class IntegerListImpl implements IntegerList {
         size = 0;
     }
 
-    @Override
-    public String[] toArray() {
-        return new String[0];
-    }
+
 
     @Override
     public Integer[] toInteger() {
-        return Arrays.copyOf(storage, size);
-    }
-
-    private void validateItem(Integer item) {
-        if (item == null) {
-            throw new NullItemException();
-        }
-    }
-
-    private void validateSize() {
-        if (size == storage.length) {
-            throw new StorageFullException();
-        }
-    }
-
-    private void validateIndex(int Index) {
-        if (Index < 0 || Index > size) {
-            throw new InvalidIndexException();
-        }
+        return new Integer[0];
     }
 
     private void sort(Integer[] arr) {
-
-        for (int i = 1; i < arr.length; i++) {
-            int temp = arr[i];
-            int j = i;
-            while (j > 0 && arr[j - 1] >= temp) {
-                arr[j] = arr[j - 1];
-                j--;
-            }
-            arr[j] = temp;
-
-        }
+        quickSort(arr, 0, arr.length - 1);
     }
 
-    private boolean binarySearch(int[] arr, Integer item) {
-        int min = 0;
-        int max = arr.length - 1;
+    private void quickSort(Integer[] arr, int begin, int end) {
+        if (begin < end) {
+            int partitionIndex = partition(arr, begin, end);
 
-        while (min <= max) {
-            int mid = (min + max) / 2;
+            quickSort(arr, begin, partitionIndex - 1);
+            quickSort(arr, partitionIndex + 1, end);
+        }
 
-            if (item == arr[mid]) {
-                return true;
-            }
 
-            if (item < arr[mid]) {
-                max = mid - 1;
-            } else {
-                min = mid + 1;
+    }
+
+    private void grow() {
+        storage = Arrays.copyOf(storage, size + size / 2);
+    }
+
+    private int partition(Integer[] arr, int begin, int end) {
+        int pivot = arr[end];
+        int i = (begin - 1);
+
+        for (int j = begin; j < end; j++) {
+            if (arr[j] <= pivot) {
+                i++;
+
+                swapElements(arr, i, j);
             }
         }
-        return false;
+        swapElements(arr, i + 1, end);
+        return i + 1;
+    }
+
+    private void swapElements(Integer[] arr, int i1, int i2) {
+        int temp = arr[i1];
+        arr[i1] = arr[i2];
+        arr[i2] = temp;
     }
 }
